@@ -11,49 +11,57 @@ import { User } from '../auth/user.entity';
 import { Category } from '../categories/category.entity';
 import { Wallet } from '../wallets/wallet.entity';
 
-export enum TransactionType {
-  INCOME = 'income',
-  EXPENSE = 'expense',
+export enum RecurringFrequency {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly',
 }
 
-@Entity('transactions')
-export class Transaction {
+@Entity('recurring_transactions')
+export class RecurringTransaction {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   amount: number;
 
-  @Column({ type: 'simple-enum', enum: TransactionType })
-  type: TransactionType;
-
   @Column()
   description: string;
 
+  @Column({ type: 'simple-enum', enum: RecurringFrequency })
+  frequency: RecurringFrequency;
+
   @Column({ type: 'date' })
-  date: string;
+  startDate: string;
+
+  @Column({ type: 'date', nullable: true })
+  endDate: string | null;
+
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
+
+  @Column({ nullable: true })
+  lastProcessedAt: string;
 
   @Column({ nullable: true })
   categoryId: string;
 
-  @ManyToOne(() => Category, (category) => category.transactions, { nullable: true })
+  @ManyToOne(() => Category, (category) => category.recurringTransactions, { nullable: true })
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
   @Column()
   walletId: string;
 
-  @ManyToOne(() => Wallet, (wallet) => wallet.transactions)
+  @ManyToOne(() => Wallet, (wallet) => wallet.recurringTransactions)
   @JoinColumn({ name: 'walletId' })
   wallet: Wallet;
-
-  @Column({ nullable: true })
-  recurringId: string;
 
   @Column()
   userId: string;
 
-  @ManyToOne(() => User, (user) => user.transactions)
+  @ManyToOne(() => User, (user) => user.recurringTransactions)
   @JoinColumn({ name: 'userId' })
   user: User;
 

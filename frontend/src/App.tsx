@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Transaction, TransactionSummary, CreateTransactionDto, Filters } from './types';
-import { api } from './api';
+import { transactionsApi } from './api';
 import { Dashboard } from './components/Dashboard';
 import { TransactionList } from './components/TransactionList';
 import { TransactionForm } from './components/TransactionForm';
@@ -17,9 +17,17 @@ export default function App() {
   const loadData = async () => {
     try {
       setError(null);
-      const [txns, sum] = await Promise.all([api.getAll(), api.getSummary()]);
-      setTransactions(txns);
-      setSummary(sum);
+      const [txns, sum] = await Promise.all([
+        transactionsApi.getAll(),
+        transactionsApi.getStats(),
+      ]);
+      const data = {
+        totalIncome: sum.income || 0,
+        totalExpense: sum.expense || 0,
+        balance: (sum.income || 0) - (sum.expense || 0),
+      };
+      setTransactions(txns.items || txns);
+      setSummary(data);
     } catch (err) {
       setError('Failed to load data. Is the backend running on port 3001?');
       console.error('Failed to load data:', err);
@@ -33,9 +41,9 @@ export default function App() {
   const handleSave = async (data: CreateTransactionDto) => {
     try {
       if (editingTransaction) {
-        await api.update(editingTransaction.id, data);
+        await transactionsApi.update(editingTransaction.id, data);
       } else {
-        await api.create(data);
+        await transactionsApi.create(data);
       }
       setShowForm(false);
       setEditingTransaction(undefined);
@@ -54,7 +62,7 @@ export default function App() {
   const handleDelete = async (id: string) => {
     if (confirm('Delete this transaction?')) {
       try {
-        await api.delete(id);
+        await transactionsApi.delete(id);
         await loadData();
       } catch (err) {
         setError('Failed to delete transaction');
